@@ -2,8 +2,8 @@ var fs = require('fs');//write output file
 var request = require('request');//request http
 var cheerio = require('cheerio');//cheerio
 var Promise = require("bluebird");//promise all
-var HOME_URL = 'https://www.bankmega.com/';
-var BASE_URL = HOME_URL + 'promolainnya.php';
+var HOME_URL = 'https://www.bankmega.com';
+var BASE_URL = HOME_URL + '/promolainnya.php';
 var categories = []
 var pageOfCategory = {}
 var subcatOfCategory = {}
@@ -28,16 +28,17 @@ function crawlerCategoryName($) {
 function crawlerCellLinks($) {
     return $('#promolain li a').map(function() {
         var subURL = $(this).attr('href');
-        return subURL.includes('http')?subURL:HOME_URL + subURL;
+        return subURL.includes('http')?subURL:HOME_URL + '/' + subURL;
     }).get();
 }
 
 function crawlerCellDetail($) {
     cellJson = {}
+    imageLink = $('.keteranganinside img').attr('src')||"";
+    cellJson['image'] = imageLink.includes('http')||imageLink=="" ? imageLink : HOME_URL + imageLink;
     cellJson['title'] = $('.titleinside h3').text()||"";
     cellJson['period'] = $('.periode b').text()||"";
     cellJson['area'] = $('.area b').text()||"";
-    cellJson['image'] = $('.keteranganinside img').attr('src')||"";
     return cellJson
 }
 
@@ -108,11 +109,8 @@ function getDataCells() {
                 })
             });
             taskPage.then(function(html) {
-                // var cellLink = BASE_URL;
-                // if(html) {
                     var $ = cheerio.load(html);
                     cellLink = crawlerCellLinks($);
-                // }
                 linkOfCategory[category] = linkOfCategory[category].concat(cellLink);
             });
             promisePages.push(taskPage);
@@ -129,15 +127,10 @@ function getDataCells() {
 function getDataCellInfos(){
     //STEP 3: loop all link groupby category
     var promiseCells = [];
-    // categories
-    // ['Travel','Lifestyle']
     categories.forEach(function(category){
-        //fucking code
-        console.log("--all linkOfCategory["+category+"] array___"+linkOfCategory[category]);
         cellOfCategory[category] = [];
         linkOfCategory[category].forEach(function(linkCell) {
                 var taskCell = new Promise(function(resolve, reject) {
-                    console.log("----["+category+"]___"+linkCell);
                     request(linkCell, function(error, response, html) {
                         if(!error && response.statusCode == 200) {
                             resolve(html)
@@ -147,7 +140,11 @@ function getDataCellInfos(){
                 });
                 taskCell.then(function(html) {
                     var $ = cheerio.load(html);
-                    cellOfCategory[category].push(crawlerCellDetail($));
+                    cellOfCategory[category].push(
+                        {
+                            ...crawlerCellDetail($),
+                            'url':linkCell
+                        });
                 });
                 promiseCells.push(taskCell);
             });
