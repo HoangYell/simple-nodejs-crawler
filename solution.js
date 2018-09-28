@@ -26,6 +26,7 @@ function writeOutput(data) {
 }
 
 function crawler(html) {
+    console.time('runTime');
     var $ = cheerio.load(html);
     //category
     categories = crawlerCategories($)
@@ -47,10 +48,10 @@ function crawler(html) {
             var $ = cheerio.load(html);
             pageEnd = crawlerCategoryEndPage($);
             categoryName = crawlerCategoryName($);
-            responseJson[categoryName]= 1
-            //step 2: loop from pageSecond to the pageEnd
+            responseJson[categoryName]= 0
+            //step 2: loop from pageStart to the pageEnd
             //fucking code
-            pageStart = 2;
+            pageStart = 1;
             var promisePages = [];
             for (p=pageStart; p<=pageEnd; p++) {
                 var taskPage = new Promise(function(resolve, reject) {
@@ -65,7 +66,8 @@ function crawler(html) {
                     var $ = cheerio.load(html);
                     pageEnd = crawlerCategoryEndPage($);
                     categoryName = crawlerCategoryName($);
-                    responseJson[categoryName]++
+                    // console.log('categoryName'+ categoryName+'pageEnd'+pageEnd);
+                    // responseJson[categoryName]++
                     //step 2: loop from pageSecond to the pageEnd
                 });
                 promisePages.push(taskPage);
@@ -84,6 +86,7 @@ function crawler(html) {
 
     Promise.all(promiseCategories).then(function(results) {
         writeOutput(JSON.stringify(responseJson));
+        console.timeEnd('runTime');
     }, function(err) {
         writeOutput('error: '+err);
     });
