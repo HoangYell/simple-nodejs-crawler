@@ -163,18 +163,20 @@ promiseData
 
 var x1 = new Promise(function(resolve, reject) {
     setTimeout(function() { 
-      resolve('arg was => xfunky1');
+      resolve('arg was => funky1');
     }, 2500);
-  }).then(function(value) { 
+  });
+x1.then(function(value) { 
     console.log(value);
 // expected output: "foo"
 });
 
 var x2 = new Promise(function(resolve, reject) {
     setTimeout(function() { 
-      resolve('arg was => xfunky2');
+      resolve('arg was => funky2');
     }, 2500);
-  }).then(function(value) { 
+  });
+x2.then(function(value) { 
     console.log(value);
 // expected output: "foo"
 });

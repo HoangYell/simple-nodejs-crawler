@@ -8,6 +8,7 @@ var categories = []
 var pageOfCategory = {}
 var subcatOfCategory = {}
 var linkOfCategory = {}
+var cellOfCategory = {}
 function crawlerCategories($) {
     return $('#subcatpromo div img').map(function(index) {
         var categoryName = $(this).attr('title');
@@ -26,8 +27,19 @@ function crawlerCategoryName($) {
 
 function crawlerCellLink($) {
     return $('#promolain li a').map(function() {
-        return HOME_URL + $(this).attr('href');
+        var subURL = $(this).attr('href');
+        // return subURL.includes('http')?subURL+"--"+page+'hint___'+crawlerCategoryName($)+$('.page_promo_lain').eq(1).attr('title'): HOME_URL + subURL;
+        return subURL.includes('http')?subURL:HOME_URL + subURL;
     }).get();
+}
+
+function crawlerCellDetail($) {
+    cellJson = {}
+    cellJson['title'] = $('.titleinside h3').text();
+    cellJson['period'] = $('.periode b').text();
+    cellJson['area'] = $('.area b').text();
+    cellJson['image'] = $('.keteranganinside img').attr('src');
+    return cellJson
 }
 
 
@@ -72,7 +84,6 @@ function getData(html) {
     return Promise.all(promiseCategories).then(function(results) {
         // writeOutput(JSON.stringify(pageOfCategory));
         getDataCells();
-        console.timeEnd('runTime');
     }, function(err) {
         // writeOutput('error: '+err);
     });
@@ -80,12 +91,9 @@ function getData(html) {
 
 function getDataCells() {
     //step 2: loop from pageStart to the pageEnd
-    // for(i=0;i<categories.length;i++) {
-    //     category = categories[i]
-    // }
+
     var promisePages = [];
     categories.forEach(function(category){
-        console.log(category+"__");
         //fucking code
         pageStart = 1;
         pageEnd = pageOfCategory[category];
@@ -112,7 +120,50 @@ function getDataCells() {
     });
     Promise.all(promisePages).then(function(results) {
         console.log('--linkdone');
-        writeOutput(JSON.stringify(linkOfCategory));
+        // writeOutput(JSON.stringify(linkOfCategory));
+        getDataCellInfos();
+    }, function(err) {
+        console.log('sub error: '+err);
+    });
+}
+
+function getDataCellInfos(){
+    //step 3: loop all link group by category
+
+    var promiseCells = [];
+    // categories
+    // ['Travel','Lifestyle']
+    categories.forEach(function(category){
+        //fucking code
+        console.log("--linkOfCategory["+category+"]___"+linkOfCategory[category]);
+        cellOfCategory[category] = [];
+        linkOfCategory[category].forEach(function(linkCell) {
+                var taskCell = new Promise(function(resolve, reject) {
+                    console.log("----["+category+"]___"+linkCell);
+                    request(linkCell, function(error, response, html) {
+                        if(!error && response.statusCode == 200) {
+                            resolve(html)
+                        }
+                        resolve();
+                    });
+                });
+                taskCell.then(function(html) {
+                    if(html) {
+                        var $ = cheerio.load(html);
+                        // console.log(crawlerCellDetail($));
+                        cellOfCategory[category].push(crawlerCellDetail($));
+                    }
+                });
+                promiseCells.push(taskCell);
+            })
+        })
+
+        //end fucking code
+    // });
+    Promise.all(promiseCells).then(function(results) {
+        console.log('--celldone-------------------------------------------------------');
+        console.timeEnd('runTime');
+        writeOutput(JSON.stringify(cellOfCategory));
     }, function(err) {
         console.log('sub error: '+err);
     });
