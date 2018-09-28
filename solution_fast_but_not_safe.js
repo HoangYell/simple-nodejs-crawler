@@ -2,7 +2,6 @@ var Promise = require('bluebird')// promise all
 var fs = require('fs')// write output file
 var request = require('request')// request http
 var cheerio = require('cheerio')// cheerio
-var requestRetry = require('requestretry')// retry request
 
 var HOME_URL = 'https://www.bankmega.com'
 var BASE_URL = HOME_URL + '/promolainnya.php'
@@ -139,14 +138,7 @@ function getDataCellInfos () {
     cellOfCategory[category] = []
     linkOfCategory[category].forEach(function (linkCell) {
       var taskCell = new Promise(function (resolve, reject) {
-        var dataRequest = {
-          url: linkCell,
-          json: true,
-          maxAttempts: 5,
-          retryDelay: 5000,
-          retryStrategy: requestRetry.RetryStrategies.HTTPOrNetworkError
-        }
-        requestRetry(dataRequest, function (error, response, html) {
+        request(linkCell, function (error, response, html) {
           if (!error && response.statusCode === 200) {
             resolve(html)
           }
