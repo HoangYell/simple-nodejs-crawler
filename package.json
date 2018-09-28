@@ -22,6 +22,7 @@
   "dependencies": {
     "bluebird": "^3.5.2",
     "cheerio": "^1.0.0-rc.2",
-    "request": "^2.88.0"
+    "request": "^2.88.0",
+    "requestretry": "^3.0.1"
   }
 }

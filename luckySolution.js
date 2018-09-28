@@ -1,7 +1,7 @@
 var fs = require('fs');//write output file
 var request = require('request');//request http
 var cheerio = require('cheerio');//cheerio
-var Promise = require("bluebird");//promise all
+var Promise = require('bluebird');//promise all
 var HOME_URL = 'https://www.bankmega.com';
 var BASE_URL = HOME_URL + '/promolainnya.php';
 var categories = []
