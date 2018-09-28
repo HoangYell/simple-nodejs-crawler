@@ -1,0 +1,91 @@
+var fs = require('fs');//write output file
+var request = require('request');//request http
+var cheerio = require('cheerio');//cheerio
+var Promise = require("bluebird");//promise all
+var responseData = 'bello YellCaMap'
+var BASE_URL = 'https://www.bankmega.com/promolainnya.php'
+var taskCategories = []
+// ?subcat=1&page=5
+// BASE_URL+'?'+'subcat='+1+'&'+'page='+1, 
+var responseJson = {}
+function crawlerCategories($) {
+    return $('#subcatpromo div img').map(function() {
+        return $(this).attr('title');
+    }).get();
+}
+
+function crawlerCategoryEndPage($) {
+    return $('.page_promo_lain').eq(1).attr('title').match(/\d+/g).map(Number).pop();
+}
+
+function crawlerCategoryName($) {
+    return $('#subcatselected img').attr('title')
+}
+
+function crawlerCategory(subcat) {
+    var pageEnd = 1;
+    //step 1: get data from pageStart=1 then find the value of pageEnd
+    var pageStart = 1;
+    var categoryURL = BASE_URL+'?'+'subcat='+subcat+'&'+'page='+pageStart;
+    request(categoryURL, function(error, response, html) {
+        if(!error && response.statusCode == 200) {
+            var $ = cheerio.load(html);
+            pageEnd = crawlerCategoryEndPage($);
+            categoryName = crawlerCategoryName($);
+            console.log('categoryName_'+categoryName+'__pageEnd_'+pageEnd);
+            responseJson[categoryName]= 1
+    //step 2: loop from pageSecond to the pageEnd
+            pageStart = 2;
+            for (p=pageStart; p<=pageEnd; p++) {
+                var categoryURL = BASE_URL+'?'+'subcat='+subcat+'&'+'page='+p
+                console.log('--p'+p+'--category'+subcat)
+                responseJson[categoryName]++;
+                request(categoryURL, function(error, response, html) {
+                    console.log('----p'+p+'--category'+subcat)
+                    if(!error && response.statusCode == 200) {
+                        var $ = cheerio.load(html);
+                        responseJson[categoryName]++;
+                        // console.log(responseJson);
+                    }
+                })
+            }
+        }
+    })
+
+   
+}
+
+function writeOutput(data) {
+    fs.writeFile('solution.json', data, function (err) {
+        if (err) throw err;
+        console.log('Saved!');
+      });
+}
+
+function crawler(html) {
+    var $ = cheerio.load(html);
+    //category
+    categories = crawlerCategories($)
+    for (i=1; i<=categories.length; i++) {
+        //crawl per category
+        taskCategories.push(crawlerCategory(i));
+    }
+    Promise.all(taskCategories).then(function() {
+        return responseJson
+    })
+}
+
+request(BASE_URL, function(error, response, html) {
+    if(!error && response.statusCode == 200) {
+        responseData = crawler(html)
+        writeOutput(JSON.stringify(responseData))
+    }
+})
+
+var files = [];
+for (var i = 0; i < 100; ++i) {
+    files.push(fs.writeFileAsync("file-" + i + ".txt", "", "utf-8"));
+}
+Promise.all(files).then(function() {
+    console.log("all the files were created");
+});
